@@ -2,8 +2,7 @@
 title: "My title"
 subtitle: "My subtitle if needed"
 author: 
-  - First author
-  - Another author
+  - Denise Chang
 thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
 date: today
 date-format: long
@@ -17,6 +16,7 @@ bibliography: references.bib
 #| include: false
 #| warning: false
 #| message: false
+#| eval: false
 
 library(tidyverse)
 library(palmerpenguins)
@@ -35,11 +35,6 @@ Why it matters paragraph
 
 Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
 
-
-
-
-
-
 # Data {#sec-data}
 
 ## Overview
@@ -57,13 +52,13 @@ Some paragraphs about how we go from a phenomena in the world to an entry in the
 Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
 
 
-
 Some of our data is of penguins (@fig-bills), from @palmerpenguins.
 
 ```{r}
 #| label: fig-bills
 #| fig-cap: Bills of penguins
 #| echo: false
+#| eval: false
 
 ggplot(penguins, aes(x = island, fill = species)) +
   geom_bar(alpha = 0.8) +
@@ -84,6 +79,7 @@ And also planes (@fig-planes). (You can change the height and width, but don't w
 #| echo: false
 #| warning: false
 #| message: false
+#| eval: false
 
 analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
 
@@ -145,7 +141,7 @@ Our results are summarized in @tbl-modelresults.
 
 ```{r}
 #| echo: false
-#| eval: true
+#| eval: false
 #| warning: false
 #| message: false
 
@@ -157,7 +153,7 @@ first_model <-
 
 ```{r}
 #| echo: false
-#| eval: true
+#| eval: false
 #| label: tbl-modelresults
 #| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
 #| warning: false
@@ -208,7 +204,7 @@ In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
 ```{r}
-#| eval: true
+#| eval: false
 #| echo: false
 #| message: false
 #| warning: false
@@ -236,7 +232,7 @@ posterior_vs_prior(first_model) +
 
 ```{r}
 #| echo: false
-#| eval: true
+#| eval: false
 #| message: false
 #| warning: false
 #| label: fig-stanareyouokay
