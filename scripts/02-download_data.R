@@ -1,103 +1,42 @@
 #### Preamble ####
-# Purpose: Downloads and saves the data from Open Data Toronto
+# Purpose: Download and save the Paramedic Services Incident Data from Open Data Toronto
 # Author: Denise Chang
-# Date: 20 November 2024
-# Contact: dede.chang@utoronto.ca
+# Date: 25 November 2024
+# Contact: dede.chang@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: None
 
-#### Preamble ####
-# Purpose: Download and save the actual Paramedic Services Incident Data from 2017 to 2022
-# from Open Data Toronto
-# Author: Julia Lee
-# Date: 23 September 2024
-# Contact: jlee.lee@mail.utoronto.ca
-# License: MIT
-# Pre-requisites: None
-# Any other information needed? N/A
-
-
-#### Setting Up the Workspace ####
-
+#### Workspace setup ####
 library(opendatatoronto)
 library(tidyverse)
-library(dplyr)
+library(openxlsx)
 
-#### Downloading the Data #### 
-
+#### Download data ####
+# get package
 package <- show_package("c21f3bd1-e016-4469-abf5-c58bb8e8b5ce")
 
-resources <- list_package_resources("c21f3bd1-e016-4469-abf5-c58bb8e8b5ce")
+resources <-
+  list_package_resources("c21f3bd1-e016-4469-abf5-c58bb8e8b5ce")
 
-datastore_resources <- filter(resources, tolower(format) %in% c('xlsx', 'geojson'))
+xlsx_resource <-
+  resources[resources$name == "paramedic-services-incident-data-2017-2022",]
 
-data <- filter(datastore_resources, row_number()==1) %>% 
-  get_resource()
+raw_data <- get_resource(xlsx_resource)
 
-data
+#### Save data ####
 
-#### Creating a Dataframe with the Downloaded Data ####
+# Each year is saved as a separate file to preserve the structure.
+data_2017 <- tibble(raw_data$"2017")
+data_2018 <- tibble(raw_data$"2018")
+data_2019 <- tibble(raw_data$"2019")
+data_2020 <- tibble(raw_data$"2020")
+data_2021 <- tibble(raw_data$"2021")
+data_2022 <- tibble(raw_data$"2022")
 
-# As the downloaded data is in "xlsx" format and very large, a dataframe for each year's 
-# raw data will be created and saved as separate csv files
-# Each dataframe will be saved in the "data/raw_data" folder
-
-# Dataframe for 2017 Data
-
-paramedic_services_data_2017 <- 
-  tibble(
-    data$"2017")
-
-paramedic_services_data_2017
-
-write.csv(paramedic_services_data_2017, file = "data/raw_data/raw_data_2017.csv")
-
-# Dataframe for 2018 Data
-
-paramedic_services_data_2018 <- 
-  tibble(
-    data$"2018")
-
-paramedic_services_data_2018
-
-write.csv(paramedic_services_data_2018, file = "data/raw_data/raw_data_2018.csv")
-
-# Dataframe for 2019 Data
-
-paramedic_services_data_2019 <- 
-  tibble(
-    data$"2019")
-
-paramedic_services_data_2019
-
-write.csv(paramedic_services_data_2019, file = "data/raw_data/raw_data_2019.csv")
-
-# Dataframe for 2020 Data
-
-paramedic_services_data_2020 <- 
-  tibble(
-    data$"2020")
-
-paramedic_services_data_2020
-
-write.csv(paramedic_services_data_2020, file = "data/raw_data/raw_data_2020.csv")
-
-# Dataframe for 2021 Data
-
-paramedic_services_data_2021 <- 
-  tibble(
-    data$"2021")
-
-paramedic_services_data_2021
-
-write.csv(paramedic_services_data_2021, file = "data/raw_data/raw_data_2021.csv")
-
-# Dataframe for 2022 Data
-
-paramedic_services_data_2022 <- 
-  tibble(
-    data$"2022")
-
-paramedic_services_data_2022
-
-write.csv(paramedic_services_data_2022, file = "data/raw_data/raw_data_2022.csv")
+# save as separate XLSX files (original format)
+write_xlsx(data_2017, "data/01-raw_data/paramedic_services_2017.xlsx")
+write_xlsx(data_2018, "data/01-raw_data/paramedic_services_2018.xlsx")
+write_xlsx(data_2019, "data/01-raw_data/paramedic_services_2019.xlsx")
+write_xlsx(data_2020, "data/01-raw_data/paramedic_services_2020.xlsx")
+write_xlsx(data_2021, "data/01-raw_data/paramedic_services_2021.xlsx")
+write_xlsx(data_2022, "data/01-raw_data/paramedic_services_2022.xlsx")
