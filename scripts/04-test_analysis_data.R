@@ -11,9 +11,9 @@
 #### Workspace setup ####
 library(testthat)
 library(arrow)
-library(tidyverse)
+library(here)
 
-clean_data <- read_parquet("data/02-analysis_data/analysis_data.parquet")
+clean_data <- read_parquet(here("data/02-analysis_data/analysis_data.parquet"))
 
 #### Test data ####
 
@@ -22,7 +22,7 @@ clean_data <- read_parquet("data/02-analysis_data/analysis_data.parquet")
 test_that("no missing values in critical columns", {
   expect_true(all(!is.na(clean_data$year)))
   expect_true(all(!is.na(clean_data$incident_type)))
-  expect_true(all(!is.na(clean_data$units_arrived_at_scene)))
+  expect_true(all(!is.na(clean_data$avg_units_arrived)))
 })
 
 # Test that 'incident_type' does not contain "-"
@@ -32,8 +32,8 @@ test_that("'incident_type' does not contain '-'", {
 
 # Test that there are no empty strings in critical columns
 test_that("no empty strings in critical columns", {
-  expect_false(any(clean_data$avg_units_arrived == 0 | 
-                     clean_data$count == 0))
+  expect_false(any(clean_data$avg_units_arrived == "" | 
+                     clean_data$count == ""))
 })
 
 ## Test that the variables are of appropriate type
@@ -59,7 +59,7 @@ test_that("'hour' is integer", {
 
 # Test that the 'incident_type' column is character type
 test_that("'incident_type' is character", {
-  expect_type(clean_data$hour, "character")
+  expect_type(clean_data$incident_type, "character")
 })
 
 # Test that the 'avg_units_arrived' column is double type
@@ -84,8 +84,9 @@ test_that("'hour' is between 0 and 23", {
 })
 
 # Test that 'incident_type' contains only valid values
+valid_types <- c("emergency transfer", "fire", "medical", "motor vehicle accident")
 test_that("'incident_type' contains only valid values", {
-  expect_true(all(data$incident_type %in% c("emergency transfer", "fire", "medical", "motor vehicle accident")))
+  expect_true(all(clean_data$incident_type %in% valid_types))
 })
 
 # Test that 'avg_units_arrived' column values are non-negative

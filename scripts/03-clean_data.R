@@ -41,7 +41,7 @@ expanded_data <-
   # remove the entries with missing values
   filter(!is.na(dispatch_time),!is.na(incident_type)) |>
   # make incident_type uniform
-  mutate(incident_type = tolower(incident_type)) |>
+  mutate(incident_type = trimws(tolower(incident_type))) |>
   filter(incident_type != "-", incident_type != "airport standby") |>
   # separate time factors from dispatch time
   mutate(
