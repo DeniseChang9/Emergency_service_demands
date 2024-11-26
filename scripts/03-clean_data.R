@@ -1,44 +1,76 @@
 #### Preamble ####
-# Purpose: Cleans the raw plane data recorded by two observers..... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 6 April 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Cleans the raw Paramedic Services Incident Data from Open Data Toronto
+# Author: Denise Chang
+# Date: 25 November 2024
+# Contact: dede.chang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: 02-download_data.R
 
 #### Workspace setup ####
 library(tidyverse)
+library(openxlsx)
+library(janitor)
+library(arrow)
 
 #### Clean data ####
-raw_data <- read_csv("inputs/data/plane_data.csv")
 
-cleaned_data <-
-  raw_data |>
-  janitor::clean_names() |>
-  select(wing_width_mm, wing_length_mm, flying_time_sec_first_timer) |>
-  filter(wing_width_mm != "caw") |>
+# read the different XLSX files
+data_2017 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2017.xlsx")
+data_2018 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2018.xlsx")
+data_2019 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2019.xlsx")
+data_2020 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2020.xlsx")
+data_2021 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2021.xlsx")
+data_2022 <-
+  read_xlsx("data/01-raw_data/paramedic_services_2022.xlsx")
+
+# combine files into one dataframe
+all_data <- bind_rows(data_2017,
+                      data_2018,
+                      data_2019,
+                      data_2020,
+                      data_2021,
+                      data_2022)
+
+expanded_data <-
+  clean_names(all_data) |>
+  # remove the entries with missing values
+  filter(!is.na(dispatch_time),!is.na(incident_type)) |>
+  # make incident_type uniform
+  mutate(incident_type = tolower(incident_type)) |>
+  filter(incident_type != "-", incident_type != "airport standby") |>
+  # separate time factors from dispatch time
   mutate(
-    flying_time_sec_first_timer = if_else(flying_time_sec_first_timer == "1,35",
-                                   "1.35",
-                                   flying_time_sec_first_timer)
+    year = year(dispatch_time),
+    month = month(dispatch_time, label = TRUE),
+    day_of_week = wday(dispatch_time, label = TRUE),
+    hour = hour(dispatch_time)
+  )
+
+# select the variables of interest
+selected_data <-
+  expanded_data |>
+  select(year,
+         month,
+         day_of_week,
+         hour,
+         incident_type,
+         units_arrived_at_scene)
+
+# find average of units_arrived_at_scene while other variables are constant
+clean_data <-
+  selected_data |>
+  group_by(year, month, day_of_week, hour, incident_type) |>
+  summarise(
+    avg_units_arrived = mean(units_arrived_at_scene, na.rm = TRUE),
+    count = n()
   ) |>
-  mutate(wing_width_mm = if_else(wing_width_mm == "490",
-                                 "49",
-                                 wing_width_mm)) |>
-  mutate(wing_width_mm = if_else(wing_width_mm == "6",
-                                 "60",
-                                 wing_width_mm)) |>
-  mutate(
-    wing_width_mm = as.numeric(wing_width_mm),
-    wing_length_mm = as.numeric(wing_length_mm),
-    flying_time_sec_first_timer = as.numeric(flying_time_sec_first_timer)
-  ) |>
-  rename(flying_time = flying_time_sec_first_timer,
-         width = wing_width_mm,
-         length = wing_length_mm
-         ) |> 
-  tidyr::drop_na()
+  ungroup()
 
 #### Save data ####
-write_csv(cleaned_data, "outputs/data/analysis_data.csv")
+write_parquet(x = clean_data,
+              sink = "data/02-analysis_data/analysis_data.parquet")
