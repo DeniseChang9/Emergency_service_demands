@@ -1,52 +1,59 @@
 #### Preamble ####
-# Purpose: Simulates a dataset of Australian electoral divisions, including the 
-  #state and party that won each division.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Simulates a dataset of paramedics incidents in Toronto from 2017 to 2022
+# Author: Denise Chang
+# Date: 26 November 2024
+# Contact: dede.chang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse` package must be installed
-# Any other information needed? Make sure you are in the `starter_folder` rproj
-
+# Pre-requisites: None
 
 #### Workspace setup ####
 library(tidyverse)
-set.seed(853)
+library(arrow)
 
+set.seed(304) # random seed for reproducibility
 
-#### Simulate data ####
-# State names
-states <- c(
-  "New South Wales",
-  "Victoria",
-  "Queensland",
-  "South Australia",
-  "Western Australia",
-  "Tasmania",
-  "Northern Territory",
-  "Australian Capital Territory"
+#### Simulate Data ####
+incident_types <-
+  c("emergency transfer",
+    "fire",
+    "medical",
+    "motor vehicle accident")
+months <- month.name  # Full month names
+days_of_week <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+# Create all combinations of year, month, and day_of_week (subset of real dataset)
+year_month_day_combinations <- expand.grid(
+  year = sample(2017:2022, 10, replace = TRUE),
+  month = sample(months, 10, replace = TRUE),
+  day_of_week = sample(days_of_week, 10, replace = TRUE)
 )
 
-# Political parties
-parties <- c("Labor", "Liberal", "Greens", "National", "Other")
+# Create ordered factors for month and day_of_week
+year_month_day_combinations$month <-
+  factor(year_month_day_combinations$month,
+         levels = months,
+         ordered = TRUE)
+year_month_day_combinations$day_of_week <-
+  factor(year_month_day_combinations$day_of_week,
+         levels = days_of_week,
+         ordered = TRUE)
 
-# Create a dataset by randomly assigning states and parties to divisions
-analysis_data <- tibble(
-  division = paste("Division", 1:151),  # Add "Division" to make it a character
-  state = sample(
-    states,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.25, 0.25, 0.15, 0.1, 0.1, 0.1, 0.025, 0.025) # Rough state population distribution
-  ),
-  party = sample(
-    parties,
-    size = 151,
-    replace = TRUE,
-    prob = c(0.40, 0.40, 0.05, 0.1, 0.05) # Rough party distribution
-  )
-)
-
+# For each combination of year, month, and day_of_week, create one record for each incident_type
+simulated_data <- year_month_day_combinations |>
+  rowwise() |>
+  do({
+    tibble(
+      year = rep(.$year, length(incident_types)),
+      month = rep(.$month, length(incident_types)),
+      day_of_week = rep(.$day_of_week, length(incident_types)),
+      incident_type = incident_types,
+      hour = sample(0:23, length(incident_types), replace = TRUE),
+      avg_units_arrived = runif(length(incident_types), 1, 5),
+      count = sample(1:5, length(incident_types), replace = TRUE)
+    )
+  }) |>
+  ungroup()  # Remove the grouping after generating all records
 
 #### Save data ####
-write_csv(analysis_data, "data/00-simulated_data/simulated_data.csv")
+write_parquet(simulated_data,
+              "data/00-simulated_data/simulated_data.parquet")

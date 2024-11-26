@@ -4,7 +4,7 @@
 # Date: 25 November 2024
 # Contact: dede.chang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
+# Pre-requisites:
 # - 02-download_data.R
 # - 03-clean_data.R
 
@@ -13,7 +13,8 @@ library(testthat)
 library(arrow)
 library(here)
 
-clean_data <- read_parquet(here("data/02-analysis_data/analysis_data.parquet"))
+clean_data <-
+  read_parquet(here("data/02-analysis_data/analysis_data.parquet"))
 
 #### Test data ####
 
@@ -32,7 +33,7 @@ test_that("'incident_type' does not contain '-'", {
 
 # Test that there are no empty strings in critical columns
 test_that("no empty strings in critical columns", {
-  expect_false(any(clean_data$avg_units_arrived == "" | 
+  expect_false(any(clean_data$avg_units_arrived == "" |
                      clean_data$count == ""))
 })
 
@@ -84,7 +85,11 @@ test_that("'hour' is between 0 and 23", {
 })
 
 # Test that 'incident_type' contains only valid values
-valid_types <- c("emergency transfer", "fire", "medical", "motor vehicle accident")
+valid_types <-
+  c("emergency transfer",
+    "fire",
+    "medical",
+    "motor vehicle accident")
 test_that("'incident_type' contains only valid values", {
   expect_true(all(clean_data$incident_type %in% valid_types))
 })
