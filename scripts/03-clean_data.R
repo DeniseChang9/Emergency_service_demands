@@ -45,7 +45,7 @@ expanded_data <-
   filter(incident_type != "-", incident_type != "airport standby") |>
   # separate time factors from dispatch time
   mutate(
-    year = year(dispatch_time),
+    year = as.integer(year(dispatch_time)),
     month = month(dispatch_time, label = TRUE),
     day_of_week = wday(dispatch_time, label = TRUE),
     hour = hour(dispatch_time)
