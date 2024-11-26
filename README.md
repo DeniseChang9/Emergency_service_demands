@@ -2,7 +2,10 @@
 
 ## Overview
 
-This repository explores how weather conditions and time-based factors influence the demand for emergency services in Toronto, particularly 911 calls. The analysis predicts peak demand periods, allowing more efficient allocation of resources and improving response times. By combining historical 911 call data with weather records, the study investigates how temperature, precipitation, time of day, and day of the week impact emergency service demand.
+**UNDER CONSTRUCTION**
+
+This repository analyzes paramedic incident data from Open Data Toronto to uncover trends in emergency response patterns. The study investigates how time-based factors such as year, month, day of the week, and hour influence the frequency and nature of incidents. By using historical data from 2017 to 2022, the project aims to identify patterns in service demand and provide insights to optimize resource allocation in Toronto. The analysis also examines variations in incident priorities and response metrics, supporting data-driven decision-making to improve paramedic service efficiency and outcomes.
+
 
 ## File Structure
 
@@ -16,5 +19,4 @@ The repo is structured as:
 
 
 ## Statement on LLM usage
-
-Aspects of the code were written with the help of the auto-complete tool, Codriver. The abstract and introduction were written with the help of ChatHorse and the entire chat history is available in inputs/llms/usage.txt.
+[UPDATE THIS] 
