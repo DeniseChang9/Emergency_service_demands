@@ -1,69 +1,94 @@
 #### Preamble ####
-# Purpose: Tests... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 26 September 2024 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Tests the clean Paramedic Services Incident data
+# Author: Denise Chang
+# Date: 25 November 2024
+# Contact: dede.chang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
-
+# Pre-requisites: 
+# - 02-download_data.R
+# - 03-clean_data.R
 
 #### Workspace setup ####
-library(tidyverse)
 library(testthat)
+library(arrow)
+library(tidyverse)
 
-data <- read_csv("data/02-analysis_data/analysis_data.csv")
-
+clean_data <- read_parquet("data/02-analysis_data/analysis_data.parquet")
 
 #### Test data ####
-# Test that the dataset has 151 rows - there are 151 divisions in Australia
-test_that("dataset has 151 rows", {
-  expect_equal(nrow(analysis_data), 151)
+
+## Test that there are no missing data
+# Test that there are no missing values in critical columns
+test_that("no missing values in critical columns", {
+  expect_true(all(!is.na(clean_data$year)))
+  expect_true(all(!is.na(clean_data$incident_type)))
+  expect_true(all(!is.na(clean_data$units_arrived_at_scene)))
 })
 
-# Test that the dataset has 3 columns
-test_that("dataset has 3 columns", {
-  expect_equal(ncol(analysis_data), 3)
+# Test that 'incident_type' does not contain "-"
+test_that("'incident_type' does not contain '-'", {
+  expect_false("-" %in% clean_data$incident_type)
 })
 
-# Test that the 'division' column is character type
-test_that("'division' is character", {
-  expect_type(analysis_data$division, "character")
+# Test that there are no empty strings in critical columns
+test_that("no empty strings in critical columns", {
+  expect_false(any(clean_data$avg_units_arrived == 0 | 
+                     clean_data$count == 0))
 })
 
-# Test that the 'party' column is character type
-test_that("'party' is character", {
-  expect_type(analysis_data$party, "character")
+## Test that the variables are of appropriate type
+# Test that the 'year' column is integer type
+test_that("'year' is of type integer", {
+  expect_type(clean_data$year, "integer")
 })
 
-# Test that the 'state' column is character type
-test_that("'state' is character", {
-  expect_type(analysis_data$state, "character")
+# Test that the 'month' column is an ordered factor
+test_that("'month' is ordered", {
+  expect_s3_class(clean_data$month, "ordered")
 })
 
-# Test that there are no missing values in the dataset
-test_that("no missing values in dataset", {
-  expect_true(all(!is.na(analysis_data)))
+# Test that the 'day_of_week' column is an ordered factor
+test_that("'day_of_week' is ordered", {
+  expect_s3_class(clean_data$day_of_week, "ordered")
 })
 
-# Test that 'division' contains unique values (no duplicates)
-test_that("'division' column contains unique values", {
-  expect_equal(length(unique(analysis_data$division)), 151)
+# Test that the 'hour' column is integer type
+test_that("'hour' is integer", {
+  expect_type(clean_data$hour, "integer")
 })
 
-# Test that 'state' contains only valid Australian state or territory names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", "Western Australia", 
-                  "Tasmania", "Northern Territory", "Australian Capital Territory")
-test_that("'state' contains valid Australian state names", {
-  expect_true(all(analysis_data$state %in% valid_states))
+# Test that the 'incident_type' column is character type
+test_that("'incident_type' is character", {
+  expect_type(clean_data$hour, "character")
 })
 
-# Test that there are no empty strings in 'division', 'party', or 'state' columns
-test_that("no empty strings in 'division', 'party', or 'state' columns", {
-  expect_false(any(analysis_data$division == "" | analysis_data$party == "" | analysis_data$state == ""))
+# Test that the 'avg_units_arrived' column is double type
+test_that("'avg_units_arrived' is double", {
+  expect_type(clean_data$avg_units_arrived, "double")
 })
 
-# Test that the 'party' column contains at least 2 unique values
-test_that("'party' column contains at least 2 unique values", {
-  expect_true(length(unique(analysis_data$party)) >= 2)
+# Test that the 'count' column is integer type
+test_that("'count' is integer", {
+  expect_type(clean_data$count, "integer")
+})
+
+## Test that the variables are in bounds
+# Test that 'year' column values are between 2017 and 2022
+test_that("'year' is between 2017 and 2022", {
+  expect_true(all(clean_data$year >= 2017 & clean_data$year <= 2022))
+})
+
+# Test that 'hour' column values are between 0 and 23
+test_that("'hour' is between 0 and 23", {
+  expect_true(all(clean_data$hour >= 0 & clean_data$hour < 24))
+})
+
+# Test that 'incident_type' contains only valid values
+test_that("'incident_type' contains only valid values", {
+  expect_true(all(data$incident_type %in% c("emergency transfer", "fire", "medical", "motor vehicle accident")))
+})
+
+# Test that 'avg_units_arrived' column values are non-negative
+test_that("'avg_units_arrived' is non-negative", {
+  expect_true(all(clean_data$avg_units_arrived >= 0))
 })
