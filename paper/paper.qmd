@@ -3,7 +3,7 @@ title: "My title"
 subtitle: "My subtitle if needed"
 author: 
   - Denise Chang
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
+thanks: "Code and data are available at: [https://github.com/DeniseChang9/Emergency_service_demands.git](https://github.com/DeniseChang9/Emergency_service_demands.git)."
 date: today
 date-format: long
 abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
@@ -16,7 +16,6 @@ bibliography: references.bib
 #| include: false
 #| warning: false
 #| message: false
-#| eval: false
 
 library(tidyverse)
 library(palmerpenguins)
@@ -25,88 +24,80 @@ library(palmerpenguins)
 
 # Introduction
 
-Overview paragraph
+"In an emergency, seconds count." [@city_of_toronto_public_safety_alerts]. Emergency medical services (EMS) are essential to public health by providing care during life-threatening situations. However, Toronto’s paramedic services are struggling to meet demand. Toronto Auditor General’s Office reports that there were over 1,200 episodes in 2023 where no ambulances were available. [@toronto_auditor_paramedic_services]. To echo this report, this paper examines EMS demand using Toronto Paramedic Services’ incident data from Open Data Toronto.
 
-Estimand paragraph
+In this analysis, I am interested in EMS demand against time-based factors in Toronto from 2017 to 2022. I explore trends in paramedic services, such as dispatch time, incident type, and number of units dispatched per incident to identify periods of high-volume demand and low availability of resources. I find that ... [ADD A FEW RESULTS HERE (or in a different paragraph??)]
 
-Results paragraph
-
-Why it matters paragraph
-
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
+The remainder of this paper is organized as follows. @sec-data discusses the data source and an overview of the studied variables. @sec-model constructs a model that predicts a shortage in paramedic resources based on time factors. @sec-results presents the results and findings of the exploration of the data. @sec-discussion discusses implications, limitations, and suggestions for future research. [TELEGRAPH APPENDIX HERE]
 
 # Data {#sec-data}
 
 ## Overview
 
+what data was used (from Open Data Toronto) + name and mention last dat accessed. What frequency it's updated etc etc
+which libraries were used
+
 We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
 
-Overview text
+## Measurements
 
-## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
+The dataset captures ambulance incident records with real-world emergency service activities. 
 
-## Outcome variables
+[INSERT SAMPLE OF CLEAN DATASET]
 
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
+Table 1 is a sample of the clean dataset used in this paper. Each row in the dataset represents to a different incident. More information such as the type of emergency and paramedic response are also included and are unique to the incident. 
 
+The temporal variables (`year`, `month`, `day_of_week`, and `hour`) are derived from dispatch timestamp recorded during each incident. These entries useful in exploring seasonal, weekly, and daily patterns. 
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+The incident type (`incident_type`) represents a classification provided by dispatchers or paramedics based on the nature of the call. This variable reflects categories such as medical emergencies, vehicle accidents, and fires. It ensures that diverse incidents are grouped into manageable classifications for analysis.
 
-```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
-#| echo: false
-#| eval: false
+The response metrics (`avg_units_arrived` and `count`) represent operational data tied to each incident. The `avg_units_arrived` variable is calculated by averaging the number of units dispatched to each type of incident within specific time intervals. The `count` variable represents the number of incidents recorded for each combination of temporal and incident characteristics. These variables quantify resource utilization and demand, enabling a detailed exploration of service patterns.
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
-```
+Through this systematic representation of real-world phenomena, the dataset provides a foundation for analyzing ambulance demand and the factors influencing emergency service delivery.
 
-Talk more about it.
+## Outcome Variables
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+This analysis focuses on two outcome variables that represent ambulance response activity:
 
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
-#| eval: false
+### `avg_units_arrived`
+This variable measures the average number of ambulance units arriving at incidents. It is continuous and provides insight into the resource intensity of different types of calls.
 
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
+- **Visualization**: A violin plot is used to examine the distribution of `avg_units_arrived` across different `incident_type` values. Temporal trends are visualized with a line chart showing annual changes in `avg_units_arrived`.
 
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
-```
+### `count`
+This variable captures the number of incidents for each category and is integer-valued. It reflects the frequency of calls and is critical for understanding demand patterns.
 
-Talk way more about it. 
+- **Visualization**: Bar charts display the total counts of incidents by `incident_type`, while a heatmap reveals temporal patterns by plotting `count` across combinations of `hour`, `day_of_week`, and `month`.
 
-## Predictor variables
+## Predictor Variables
 
-Add graphs, tables and text.
+Several variables are explored as predictors to analyze temporal, categorical, and spatial factors influencing ambulance response:
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+### Temporal Predictors
+- **`year`**: Indicates the year of each incident, spanning 2017 to 2022.  
+  - **Visualization**: A line chart visualizes changes in `count` and `avg_units_arrived` over time to detect trends.  
 
+- **`month`**: An ordered factor capturing the month of the incident.  
+  - **Visualization**: A seasonal heatmap overlays `month` and `day_of_week` to analyze patterns in incident frequency and average unit arrival.  
+
+- **`day_of_week`**: An ordered factor representing the day of the week.  
+  - **Visualization**: Temporal variability is further explored with bar charts and heatmaps.  
+
+- **`hour`**: Represents the hour of the day (0–23).  
+  - **Visualization**: A density plot of incident counts by hour reveals peak times for service demands.
+
+### Categorical Predictor
+- **`incident_type`**: A categorical variable indicating the type of incident (e.g., medical emergencies, vehicle accidents).  
+  - **Visualization**: Stacked bar charts and facet grids illustrate differences in resource use and frequency across `incident_type`.
+
+## Summary Statistics and Relationships
+
+To understand the dataset, summary statistics are computed for `avg_units_arrived` and `count`, including mean, median, and standard deviation. Visualizations such as histograms and scatter plots capture distributions and relationships between the variables. A scatter plot matrix examines pairwise relationships, while a correlation heatmap identifies patterns among numerical variables.
+
+Together, these outcomes and predictors provide a detailed view of ambulance demand and the factors influencing it.
 
 
-
-
-
-
-
-# Model
+# Model {#sec-model}
 
 The goal of our modelling strategy is twofold. Firstly,...
 
@@ -135,7 +126,7 @@ We expect a positive relationship between the size of the wings and time spent a
 We can use maths by including latex between dollar signs, for instance $\theta$.
 
 
-# Results
+# Results {#sec-results}
 
 Our results are summarized in @tbl-modelresults.
 
@@ -170,7 +161,7 @@ modelsummary::modelsummary(
 
 
 
-# Discussion
+# Discussion {#sec-discussion}
 
 ## First discussion point {#sec-first-point}
 
