@@ -32,12 +32,13 @@ The remainder of this paper is organized as follows. @sec-data discusses the dat
 
 # Data {#sec-data}
 
-## Overview
+The statistical programming language R [@R] is used to process, manage and visualize the data. Specifically, statistical libraries such as `opendatatoronto` [@opendatatoronto], `openxlsx` [@openxlsx] and `janitor` [@janitor] are used to simulate, download and clean the raw data. The library `arrow` [@arrow] was used to save the simulated dataset and the analysis dataset. Other libraries like '`knitr` [@knitr], `here` [@here] are used to load and to render tables. The library `tidyverse` [@tidyverse] is useful throughout the entire data manipulation process. 
 
-what data was used (from Open Data Toronto) + name and mention last dat accessed. What frequency it's updated etc etc
-which libraries were used
+## Data source
 
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
+The dataset used for this analysis is titled "Paramedic Services Incident Data" and is published by Toronto Paramedic Services [@data_parmedic_source]. For this paper, the dataset is retrieved from the City of Toronto Open Data Portal through the R package `opendatatoronto` [@opendatatoronto]. The initial dataset features paramedic dispatch time, the type of incident, the priority level of each incident, the number of paramedic units arrived at scene and the forward station area of the incident. These features are annually refreshed on Open Data Toronto by Toronto Paramedic Services. 
+
+The data used for this paper was retrieved on November 25, 2024 and was last refreshed on October 5, 2023. 
 
 ## Measurements
 
