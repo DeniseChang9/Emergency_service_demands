@@ -23,7 +23,8 @@ library(readxl)
 library(arrow)
 library(here)
 library(knitr)
-
+library(modelsummary)
+library(patchwork)
 ```
 
 # Introduction
@@ -66,50 +67,44 @@ raw_2017 |>
   kable(col.names = c("Dispatch Time", "Incident Type", "Priority Number", "Units Arrived", "Location"))
 ```
 
-@tbl-raw_data is a sample of the 10 first entries in the incident data in 2017. Each row in the dataset represents a unique incident. "Dispatch Time" is the precise time when the first paramedic unit was assigned to an incident. This is measured in year, month, date, hour, minutes, and seconds. "Incident Type" is the category assigned to the incident by the dispatcher based on the information provided in the 9.1.1. call. The possible categories of incident are medical emergencies, emergency transfers, fire-related incidents and motor vehicle accidents. "Priority number" represents the urgency of an incident with 1 being the most urgent and 5 being the least. The priority number is measured by the Medical Priority Dispatch System (MPDS) based on the information provided by the 9.1.1. caller(s). "Units Arrived" is the total number of paramedics that arrived on the scene of incident. This is measured by counting the number of different paramedic units who were dispatched and responded to the incident. Units part of this count do not have to be simultaneously present, and a unit who leaves the scene and comes back afterwards is considered 1 count. 
+@tbl-raw_data is a sample of the 10 first entries in the incident data in 2017. Each row in the dataset represents a unique incident. "Dispatch Time" is the precise time when the first paramedic unit was assigned to an incident. This is measured in year, month, date, hour, minutes, and seconds. "Incident Type" is the category assigned to the incident by the dispatcher based on the information provided by the 9.1.1. caller(s). The possible categories of incident are medical emergencies, emergency transfers, fire-related incidents and motor vehicle accidents. "Priority number" represents the urgency of an incident with 1 being the most urgent and 5 being the least. The priority number is measured by the Medical Priority Dispatch System (MPDS) based on the information provided by the 9.1.1. caller(s). "Units Arrived" is the total number of paramedics that arrived on the scene of incident. This is measured by counting the number of different paramedic units who were dispatched and responded to the incident. Units part of this count do not have to be simultaneously present, and a unit who leaves the scene and comes back afterwards is considered 1 count. 
 "Location" is the general location of the incident based on Postal Code Forward Sortation Areas. This is determined as the first three characters of the postal code of the incident location. 
 
-## Outcome Variables
+## Variables of Interest
 
-This analysis focuses on two outcome variables that represent ambulance response activity:
+In the analysis dataset, most variables were constructed using the variables in the raw dataset. From the original dataset, "Dispatch Time" was broken down into four separate variables in the analysis dataset: "Year", "Month", "Day of the Week" and "Hour of the Day". The aim for this construction is to isolate the effect of each temporal factor on the paramedic incident request paramedic response. While holding the time variables and the "Incident Type" variable constant, two more variables were constructed from the "Units Arrived" variable from the raw dataset: "Average Units Arrived" and "Number of Incidents".
 
-### `avg_units_arrived`
-This variable measures the average number of ambulance units arriving at incidents. It is continuous and provides insight into the resource intensity of different types of calls.
+```{r}
+#| message: false
+#| echo: false
+#| warning: false
+#| label: tbl-avg_units
+#| tbl-cap: Ten First Rows of the Analysis Data on Paramedic Services Incident Data from 2017 to 2022
 
-- **Visualization**: A violin plot is used to examine the distribution of `avg_units_arrived` across different `incident_type` values. Temporal trends are visualized with a line chart showing annual changes in `avg_units_arrived`.
+# read raw data
+clean_data <- read_parquet(here::here("data/02-analysis_data/analysis_data.parquet"))
 
-### `count`
-This variable captures the number of incidents for each category and is integer-valued. It reflects the frequency of calls and is critical for understanding demand patterns.
+# visualize the first 10 rows of the data
+clean_data |>
+  slice(1:10) |>
+  kable(col.names = c("Year", "Month", "Day of the Week", "Hour of the Day", "Incident Type", "Average Units Arrived", "Number of Incidents" ))
 
-- **Visualization**: Bar charts display the total counts of incidents by `incident_type`, while a heatmap reveals temporal patterns by plotting `count` across combinations of `hour`, `day_of_week`, and `month`.
+```
+@tbl-avg_units is a sample of the analysis dataset used in this paper. The variables of interest of the analysis dataset are:
 
-## Predictor Variables
+- Number of incidents:This variable represents the total count of emergency incidents recorded for each unique combination of time and incident-type factors. This is the outcome variable in the model, since it reflects the demandfor paramedic services.
 
-Several variables are explored as predictors to analyze temporal, categorical, and spatial factors influencing ambulance response:
+- Average number of units arrived: This variable reflects the average number of paramedic units dispatched and arrived at the scene for a given combination of incident type, time, and date. This is another outcome variable , since it provides insight into resource allocation.
 
-### Temporal Predictors
-- **`year`**: Indicates the year of each incident, spanning 2017 to 2022.  
-  - **Visualization**: A line chart visualizes changes in `count` and `avg_units_arrived` over time to detect trends.  
+- Incident Type: This categorical variable describes the nature of each emergency, such as medical emergencies, fire-related incidents, motor vehicle accidents, or emergency transfers. It captures the diversity of incidents and is useful for exploring differences in ressource needs
 
-- **`month`**: An ordered factor capturing the month of the incident.  
-  - **Visualization**: A seasonal heatmap overlays `month` and `day_of_week` to analyze patterns in incident frequency and average unit arrival.  
+- Year: The year the incident occurred, capturing long-term trends in incident frequency.
 
-- **`day_of_week`**: An ordered factor representing the day of the week.  
-  - **Visualization**: Temporal variability is further explored with bar charts and heatmaps.  
+- Month: The month of occurrence, which higlights seasonal trends
 
-- **`hour`**: Represents the hour of the day (0–23).  
-  - **Visualization**: A density plot of incident counts by hour reveals peak times for service demands.
+- Day of Week: The day on which the incident took place, accounting for patterns related to weekdays versus weekends.
 
-### Categorical Predictor
-- **`incident_type`**: A categorical variable indicating the type of incident (e.g., medical emergencies, vehicle accidents).  
-  - **Visualization**: Stacked bar charts and facet grids illustrate differences in resource use and frequency across `incident_type`.
-
-## Summary Statistics and Relationships
-
-To understand the dataset, summary statistics are computed for `avg_units_arrived` and `count`, including mean, median, and standard deviation. Visualizations such as histograms and scatter plots capture distributions and relationships between the variables. A scatter plot matrix examines pairwise relationships, while a correlation heatmap identifies patterns among numerical variables.
-
-Together, these outcomes and predictors provide a detailed view of ambulance demand and the factors influencing it.
-
+- Hour: The hour of the day, capturing diurnal patterns in emergency service demand.
 
 # Model {#sec-model}
 
@@ -118,62 +113,127 @@ The goal of our modelling strategy is twofold. Firstly,...
 Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
 
 ## Model set-up
+We run the model in R [@R] using the `rstanarm` package [@rstanarm]. Default priors from `rstanarm` are applied.
+The estimating equating is as follows: 
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+Define $y_i$ as the number of incidents observed for a specific combination of factors. Then, $\mu_i$ is the expected number of incidents based on temporal and incident-specific predictors.  
 
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
+\begin{align}  
+y_i | \mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\  
+\mu_i &= \alpha + \beta_{\text{year}} \cdot \text{year}_i + \sum_{k=1}^{11} \beta_{\text{month}, k} \cdot \text{month}_{ik} + \sum_{j=1}^{6} \beta_{\text{day}, j} \cdot \text{day}_{ij} \\
+&\quad + \beta_{\text{hour}} \cdot \text{hour}_i + \sum_{t=1}^{3} \beta_{\text{incident}, t} \cdot \text{incident}_{it} + \beta_{\text{units}} \cdot \text{avg\_units}_i \\  
+\alpha &\sim \mbox{Normal}(0, 2.5) \\  
+\beta &\sim \mbox{Normal}(0, 2.5) \\  
+\sigma &\sim \mbox{Exponential}(1)  
+\end{align}  
+In this model, we define the variables as follows:
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+- $y_i$ is the number of incidents observed for a specific combination of factors
 
+- $\mu_i$ is the expected number of incidents based on predictors
+
+- $\alpha$ is the intercept term, representing the baseline number of incidents.
+
+- $\beta_{\text{year}}$ is the coefficient for the year variable.
+
+- $\beta_{\text{month}}$ is the set of coefficients for the month of the year.
+
+- $\beta_{\text{day}}$ is the set of coefficients for the day of the week.
+
+- $\beta_{\text{hour}}$ is the coefficient for the hour of the day.
+
+- $\beta_{\text{incident}}$ is the set of coefficients for the incident types.
+
+- $\beta_{\text{units}}$ is the coefficient for the average number of units arriving on scene
+
+- $\sigma$ is the standard deviation of the residuals, representing unexplained variability in incident counts.
 
 ### Model justification
+For this analysis, a Bayesian Generalized Linear Model (GLM) was chosen to predict incident call counts as a function of temporal factors, incident type, and resource allocation. This approach provides the flexibility to model log-transformed continuous outcomes and includes prior beliefs about the relationships between predictors and the outcome. The Bayesian framework quantifies uncertainty in parameter estimates and predictions, which is useful in our context where variability and uncertainty are prevalent. This model is appropriate given the observed overdispersion in the count data.
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+In Bayesian modeling, priors were defined to reflect plausible values. A $\mbox{Normal}(0, 10)$ prior was used for the intercept ($\alpha$) to allow a wide range of baseline incident counts across predictor combinations. Predictor coefficients ($\beta$) were assigned a $\mbox{Normal}(0, 2.5)$ prior to accommodate moderate effect sizes without being too restrictive. The residual standard deviation ($\sigma$) was given an $\mbox{Exponential}(1)$ prior to emphasize smaller residual errors. These priors avoid constraints that are too narrow, reducing bias in the estimates
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+This model relies on several assumptions. First, it assumes a linear relationship between predictors and the log-transformed outcome variable, which simplifies interpretation. The model also assumes residuals follow a Gaussian distribution, consistent with the log-transformation of the outcome variable. Despite its strengths, the model has limitations. It does not explicitly model nonlinear relationships or interactions,like those between temporal and incident type variables, which could capture more complex dynamics. Finally, the Gaussian residual assumption may be inappropriate in certain cases of extreme overdispersion.
 
+Several alternative models were considered. Poisson regression, a natural choice for count data, was notr chosen due to overdispersion in the outcome variable. Negative binomial regression was also considered, but does not incorporate prior beliefs or uncertainties as naturally as Bayesian methods.
+
+Ultimately, the Bayesian Gaussian GLM was selected since it can handle continuous log-transformed data and include prior beliefs while still being digesteable.Through Bayesian inference, the model quantifies uncertainty and provides a probabilistic framework ideal for emergency response planning. This approach ensures actionable predictions for resource allocation decisions.
 
 # Results {#sec-results}
-
-Our results are summarized in @tbl-modelresults.
+Our results are summarized in @tbl-model.
 
 ```{r}
-#| echo: false
-#| eval: false
-#| warning: false
 #| message: false
-
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-```
-
-```{r}
-#| echo: false
-#| eval: false
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
 #| warning: false
+#| echo: false
+#| label: tbl-model
+#| tbl-cap: Model Summary of Incident Count
 
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
+# read model
+model <-
+  readRDS(file = here::here("models/incident_model.rds"))
+
+summary(model)
 ```
 
+The Bayesian GLM model, based on 38,494 observations and 24 predictors, has a posterior predictive mean (mean_PPD) of 44.4, which aligns with observed incident counts. This shows that the model captures variability.
 
+Temporal factors play a role in determining incident volume. The coefficient for hour (mean = 1.2) shows predictable variations in demand throughout the day, with highly precise estimates (sd = 0.0). Monthly and daily trends are captured through polynomial terms, reflecting the nonlinear nature of incident occurrences across different times of the year and week.
 
+The analysis suggests the dominance of medical incidents in driving overall incident counts. The coefficient for medical calls (mean = 126.4) is much higher than the coefficient for fire-related incidents (mean = -6.6) and the coefficient for motor vehicle accidents (mean = 0.2). This shows that medical emergencies is the primary source of paramedic service demand, requiring special attention in operational planning.
+
+The positive relationship between the average number of units arriving and incident counts (mean = 1.3) suggests that resource allocation is another determining factor. There is a correlation where increased resource availability may correspond to higher incident volumes. This reflects areas of concentrated demand and hints at resource allocation strategies.
+
+## Hour of the Day on Paramedic Incident Demand and Reponse
+```{r}
+#| message: false
+#| warning: false
+#| echo: false
+#| label: tbl-clock_plot
+#| tbl-cap: Paramedic Incident Counts and Number of Units Arrived on Scene by Hour of the Day.
+
+# Filter relevant columns
+filtered_data <- clean_data %>%
+  select(hour, count, avg_units_arrived)
+
+# Summarize counts and average units by hour
+hourly_summary <- filtered_data %>%
+  group_by(hour) %>%
+  summarize(
+    total_count = sum(count),
+    avg_units = mean(avg_units_arrived)
+  )
+
+# Clock plot for incident count
+count_plot <- ggplot(hourly_summary, aes(x = hour, y = total_count)) +
+  geom_col(fill = "steelblue", color = "black") +
+  scale_x_continuous(breaks = 0:23, limits = c(0, 23)) +
+  coord_polar(start = 0) +
+  theme_minimal() +
+  labs(
+    title = "Incident Counts by Hour",
+    x = "Hour (Clock Position)",
+    y = "Number of Incidents"
+  )
+
+# Clock plot for average units arrived
+units_plot <- ggplot(hourly_summary, aes(x = hour, y = avg_units)) +
+  geom_col(fill = "coral", color = "black") +
+  scale_x_continuous(breaks = 0:23, limits = c(0, 23)) +
+  coord_polar(start = 0) +
+  theme_minimal() +
+  labs(
+    title = "Average Units Arrived by Hour",
+    x = "Hour (Clock Position)",
+    y = "Avg Units Arrived"
+  )
+
+# Combine the plots side by side
+combined_plot <- count_plot + units_plot
+
+# Display the plots
+invisible(print(combined_plot))
+```
 
 # Discussion {#sec-discussion}
 
