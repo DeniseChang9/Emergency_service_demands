@@ -1,12 +1,12 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Understanding Paramedic Services Demand and Response"
+subtitle: "An Analysis of the Impact of Time-Based Factors on Paramedic Servie Demand in Toronto from 2017 to 2022"
 author: 
   - Denise Chang
 thanks: "Code and data are available at: [https://github.com/DeniseChang9/Emergency_service_demands.git](https://github.com/DeniseChang9/Emergency_service_demands.git)."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This paper examines the trends paramedic service demand and response against time-based factors. Using the Paramedic Services Incident Data from 2017 to 2022,the analysis aims to determine the influence of temporal factors and incident types on paramedic service demand and response. The findings shows a constant paramedic response depite fluctuating service demands throughout seasons and time of the day suggesting a flaw in resource allocation. The results of this study are significant, as they can be indicators to policymakers and paramedic services during resource manadement and dispatch."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -25,22 +25,23 @@ library(here)
 library(knitr)
 library(modelsummary)
 library(patchwork)
+library(gridExtra)
 ```
 
 # Introduction
 
-"In an emergency, seconds count." [@city_of_toronto_public_safety_alerts]. Emergency medical services (EMS) are essential to public health by providing care during life-threatening situations. However, Toronto’s paramedic services are struggling to meet demand. Toronto Auditor General’s Office reports that there were over 1,200 episodes in 2023 where no ambulances were available. [@toronto_auditor_paramedic_services]. To echo this report, this paper examines EMS demand using Toronto Paramedic Services’ incident data from Open Data Toronto.
+"In an emergency, seconds count." [@city_of_toronto_public_safety_alerts]. Emergency medical services (EMS) are essential to public health by providing care during life-threatening situations. However, Toronto’s paramedic services are struggling to meet demand. Toronto Auditor General’s Office reports that there were over 1,200 episodes in 2023 where no ambulances were available [@toronto_auditor_paramedic_services]. To echo this report, this paper examines EMS demand using Toronto Paramedic Services’ incident data from Open Data Toronto.
 
-In this analysis, I am interested in EMS demand against time-based factors in Toronto from 2017 to 2022. I explore trends in paramedic services, such as dispatch time, incident type, and number of units dispatched per incident to identify periods of high-volume demand and low availability of resources. I find that ... [ADD A FEW RESULTS HERE (or in a different paragraph??)]
+In this analysis, I am interested in EMS demand against time-based factors in Toronto from 2017 to 2022. I explore trends in paramedic services, such as dispatch time, incident type, and number of units dispatched per incident to identify periods of high-volume demand and low availability of resources. I find that the number of incidents requiring paramedic services is higher in summer seasons, peaking in July and in August. The lowest number of incidents are in February. I also find that the number of incident requests are lowest between 1AM and 7AM, while the periods of high demand are between 11AM to 7PM. However, the number of paramedic units dispatched remained constant, despite the fluctuations in demand. 
 
-The remainder of this paper is organized as follows. @sec-data discusses the data source and an overview of the studied variables. @sec-model constructs a model that predicts a shortage in paramedic resources based on time factors. @sec-results presents the results and findings of the exploration of the data. @sec-discussion discusses implications, limitations, and suggestions for future research. [TELEGRAPH APPENDIX HERE]
+The remainder of this paper is organized as follows. @sec-data discusses the data source and an overview of the studied variables. @sec-model constructs a model that predicts a shortage in paramedic resources based on time factors. @sec-results presents the results and findings of the exploration of the data. @sec-discussion discusses implications, limitations, and suggestions for future research. [Appendix -@sec-observational_data] provides a detailed exploration of observational data collection methods.
 
 # Data {#sec-data}
 
 ## Overview
 The dataset used for this analysis is titled "Paramedic Services Incident Data" and is published by Toronto Paramedic Services [@data_parmedic_source]. For this paper, the dataset is retrieved from the City of Toronto Open Data Portal.
 
-The statistical programming language R [@R] is used to process, manage and visualize the data. Specifically, statistical libraries such as `opendatatoronto` [@opendatatoronto], `openxlsx` [@openxlsx] and `janitor` [@janitor] are used to simulate, download and clean the raw data. Libraries like `arrow` [@arrow] and `readxl` [@readxl] were used to save and read datasets. Other libraries like `knitr` [@knitr], `here` [@here] are used to load and to render tables. The library `tidyverse` [@tidyverse] is useful throughout the entire data manipulation process. 
+The statistical programming language R [@R] is used to process, manage and visualize the data. Specifically, statistical libraries such as `opendatatoronto` [@opendatatoronto], `openxlsx` [@openxlsx] and `janitor` [@janitor] are used to simulate, download and clean the raw data. Libraries like `arrow` [@arrow] and `readxl` [@readxl] were used to save and read datasets. Other libraries like `knitr` [@knitr], `here` [@here] are used to load and to render tables. Libraries such as `gridExtra` [@gridExtra] and `patchwork` [@patchwork] are used in te visualization of the data.The library `rstanarm` [@rstanarm] is used in the modeling process and tidyverse` [@tidyverse] is useful throughout the entire data manipulation process. 
 
 The initial dataset features data on paramedic dispatch time, type of incident, priority level of each incident, number of paramedic units arrived at scene and forward sortation area of the incident. These features are annually refreshed on Open Data Toronto by Toronto Paramedic Services.
 
@@ -108,10 +109,6 @@ clean_data |>
 
 # Model {#sec-model}
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
-
 ## Model set-up
 We run the model in R [@R] using the `rstanarm` package [@rstanarm]. Default priors from `rstanarm` are applied.
 The estimating equating is as follows: 
@@ -160,7 +157,8 @@ Several alternative models were considered. Poisson regression, a natural choice
 Ultimately, the Bayesian Gaussian GLM was selected since it can handle continuous log-transformed data and include prior beliefs while still being digesteable.Through Bayesian inference, the model quantifies uncertainty and provides a probabilistic framework ideal for emergency response planning. This approach ensures actionable predictions for resource allocation decisions.
 
 # Results {#sec-results}
-Our results are summarized in @tbl-model.
+
+The results of the model can be found in @tbl-model.
 
 ```{r}
 #| message: false
@@ -169,11 +167,24 @@ Our results are summarized in @tbl-model.
 #| label: tbl-model
 #| tbl-cap: Model Summary of Incident Count
 
-# read model
-model <-
-  readRDS(file = here::here("models/incident_model.rds"))
+# Read the model
+model <- readRDS(file = here::here("models/incident_model.rds"))
 
-summary(model)
+# Extract coefficients from the model summary
+model_summary <- summary(model)
+
+# Convert the coefficients matrix to a data frame
+coefficients <- as.data.frame(model_summary)
+
+# Round the numeric columns to 2 decimal places
+coefficients[] <- lapply(coefficients, function(x) if(is.numeric(x)) round(x, 2) else x)
+
+# Round the last row to a smaller number of digits
+coefficients[nrow(coefficients),] <- format(coefficients[nrow(coefficients),], digits = 3)
+
+# Display the table without the 'Term' column
+kable(coefficients, caption = "Model Coefficients", format = "markdown")
+
 ```
 
 The Bayesian GLM model, based on 38,494 observations and 24 predictors, has a posterior predictive mean (mean_PPD) of 44.4, which aligns with observed incident counts. This shows that the model captures variability.
@@ -185,12 +196,12 @@ The analysis suggests the dominance of medical incidents in driving overall inci
 The positive relationship between the average number of units arriving and incident counts (mean = 1.3) suggests that resource allocation is another determining factor. There is a correlation where increased resource availability may correspond to higher incident volumes. This reflects areas of concentrated demand and hints at resource allocation strategies.
 
 ## Hour of the Day on Paramedic Incident Demand and Reponse
-```{r}
+```{r, fig.width=8, fig.height=4}
 #| message: false
 #| warning: false
 #| echo: false
-#| label: tbl-clock_plot
-#| tbl-cap: Paramedic Incident Counts and Number of Units Arrived on Scene by Hour of the Day.
+#| label: fig-clock_plot
+#| fig-cap: Paramedic Incident Counts and Number of Units Arrived on Scene by Hour of the Day from 2017 to 2022
 
 # Filter relevant columns
 filtered_data <- clean_data %>%
@@ -207,7 +218,7 @@ hourly_summary <- filtered_data %>%
 # Clock plot for incident count
 count_plot <- ggplot(hourly_summary, aes(x = hour, y = total_count)) +
   geom_col(fill = "steelblue", color = "black") +
-  scale_x_continuous(breaks = 0:23, limits = c(0, 23)) +
+  scale_x_continuous(breaks = 0:24, limits = c(0, 24)) +
   coord_polar(start = 0) +
   theme_minimal() +
   labs(
@@ -219,13 +230,17 @@ count_plot <- ggplot(hourly_summary, aes(x = hour, y = total_count)) +
 # Clock plot for average units arrived
 units_plot <- ggplot(hourly_summary, aes(x = hour, y = avg_units)) +
   geom_col(fill = "coral", color = "black") +
-  scale_x_continuous(breaks = 0:23, limits = c(0, 23)) +
+  scale_x_continuous(breaks = 0:24, limits = c(0, 24)) +
   coord_polar(start = 0) +
   theme_minimal() +
   labs(
     title = "Average Units Arrived by Hour",
     x = "Hour (Clock Position)",
-    y = "Avg Units Arrived"
+    y = "Average Units Arrived"
+  ) +
+  theme(
+    plot.margin = margin(20, 20, 20, 20), 
+    plot.title = element_text(hjust = 0.5)
   )
 
 # Combine the plots side by side
@@ -234,86 +249,158 @@ combined_plot <- count_plot + units_plot
 # Display the plots
 invisible(print(combined_plot))
 ```
+@fig-clock_plot shows distinct patterns in incident demand and resource allocation throughout the day. The number of incident calls is lowest during the early morning hours, from 1 AM to 7 AM. This suggests that fewer emergencies or incidents occur during these hours, possibly due to lower activity levels at night. Conversely, from 11 AM to 7 PM, there is a noticeable peak in the number of incident calls, reflecting an increased demand during daytime hours.
+
+The number of units arriving at the scene remains constant throughout the day, as shown in @fig-clock_plot. This suggests that the response resources, measured by the average number of units dispatched to incidents, do not vary by time of day. While demand fluctuates based on the time of day, the resource allocation appears to be stable, regardless of whether it's early morning or peak daytime hours.
+
+## Month of the Year on Paramedic Incident Demand and Reponse
+```{r, fig.width=8, fig.height=4}
+#| message: false
+#| warning: false
+#| echo: false
+#| label: fig-line_plot
+#| fig-cap: Paramedic Incident Counts and Number of Units Arrived on Scene by Month of the Year from 2017 to 2022.
+
+# Aggregate data by month
+monthly_data <- clean_data %>%
+  group_by(month) %>%
+  summarise(
+    avg_units = mean(avg_units_arrived, na.rm = TRUE),
+    total_count = sum(count, na.rm = TRUE)
+  )
+
+# Plot for total incident count (bar chart)
+count_plot <- ggplot(monthly_data, aes(x = month, y = total_count)) +
+  geom_bar(stat = "identity", fill = "blue", color = "black", width = 0.7) +
+  labs(
+    title = "Total Incident Count by Month",
+    x = "Month",
+    y = "Total Incident Count"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Plot for average units (line chart)
+units_plot <- ggplot(monthly_data, aes(x = month, y = avg_units)) +
+  geom_line(color = "red", size = 1) +
+  geom_point(color = "red", size = 2) +
+  labs(
+    title = "Average Units Arrived by Month",
+    x = "Month",
+    y = "Average Units"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ylim(0, 2) +
+  theme(
+    plot.margin = margin(20, 20, 20, 20), 
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Arrange both plots side by side
+grid.arrange(count_plot, units_plot, ncol = 2)
+```
+@fig-line_plot shows the incident count and unit deployment over the months. From February to July, the number of incidents gradually increases, with a  peak occurring in July and maintained in August. This suggests that during these months, the demand for emergency services rises significantly. After the peak, the number of incidents declines, though the decrease is slow and continuous, indicating a steady reduction in demand as the year progresses. A drop in paramedic service demand drops in February, which represents the lowest point of the year for incidents. Despite these fluctuations in the number of incidents, the average number of units dispatched to each incident remains constant throughout the entire period. There is a consistency in the number of units deployed, regardless of the demand variations. 
 
 # Discussion {#sec-discussion}
 
-## First discussion point {#sec-first-point}
+## Temporal Trends in Incident Demand 
+The analysis of incident counts in @fig-clock_plot and @fig-line_plot reveals clear temporal patterns, with a marked increase in demand from February to July, peaking in the summer months of July and August. This trend in demand for emergency services suggests that higher temperatures or other environmental factors may be influencing the frequency of incidents. 
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+After the peak, the decline in incidents is gradual, with a sharp drop occurring in February, marking the lowest demand for services. This decline may reflect seasonal changes or a reduction in certain types of incidents during colder months. The consistency in demand across the year, though fluctuating, provides valuable insights into the factors driving incident frequency and how emergency services might adjust their strategies to accommodate these trends.
 
-## Second discussion point
+### Global Warming in Increasing Incident Demand
+The average global temperature on Earth has increased by at least 1.1° Celsius (1.9° Fahrenheit) since 1880. This is a large increase considering the majority of the warming has occurred since 1975, at a rate of roughly 0.15 to 0.20°C per decade [@lenssen]. This means that there are more increasingly hot days in the summer, and heat-related emergencies are more common. [@climate_institute_hot_summer_autumn]. This can explain an increase in medical emergencies due to heat waves, and fire-related emergencies especially in drier and hotter areas of Toronto. 
 
-Please don't use these as sub-heading labels - change them to be what your point actually is.
+## Consistency of Resource Allocation
+Despite variations in incident demand, the number of units dispatched to each call remains constant over time. This consistent deployment strategy suggests a rigid approach to resource allocation, where the same number of units are sent to all incidents regardless of demand fluctuations. This is an indicator of inefficient resource management or of lack of paramedic resources. This aligns with Toronto Paramedic Services' Executive Summary in 2024. The Auditor General highlights that from 2019 to 2023, the average paramedic response time increased by 31% and by 29% for incident calls of priority 2 and 3 [@anderson]. A more dynamic resource allocation model that adjusts the number of units based on the volume of incidents could optimize service delivery and response times.
 
-## Third discussion point
+## Implications for Policy and Operational Strategy
+The findings from this analysis shows the importance on temporal factors in demand forecasting to optimize unit deployment based on incident volumes. Policymakers and emergency services can reevaluate current resource allocation practices such that units are deployed where and when they are most needed.
 
-## Weaknesses and next steps
+## Weaknesses and Next Steps
+One limitation of this analysis is the assumption that the number of units deployed should be constant across all incidents. This approach do not account for complexities of different types of incidents, which could require adjustments in resource allocation. Further research could explore how incident complexity (e.g., severity, location, time of day) impacts the need for additional or fewer units, which can also contribute to resource planning.
 
-Weaknesses and next steps should also be included.
+Additionally, while the temporal patterns in demand are evident, this study does not explore external factors that might influence incident frequency, such as public holidays, or special events. Future work could incorporate these variables to refine demand forecasting models. A deeper understanding of these external factors could help emergency services anticipate and prepare for periods of high demand, ensuring that resources are allocated more effectively.
+
+Lastly, the analysis could be expanded by including geographical data to examine how resource allocation strategies might differ across regions. This approach could provide insights into local needs and help tailor emergency response plans to the specific needs of different communities.
 
 \newpage
 
 \appendix
 
-# Appendix {-}
+# Appendix {.unnumbered}
 
+# Collection and Analysis of Observational Data {#sec-observational_data}
+This appendix provides a deep dive into how observational data is collected, how to ensure its credibility, and how new data can be collected responsibly. The strategies for minimizing bias, controlling for confounding variables, and maintaining high data quality are key for making credible, robust conclusions in observational research.
 
-# Additional data details
+## Observational Data
 
-# Model details {#sec-model-details}
+### What is Observational Data?
+Observational data refers to information collected through direct observation of events, behaviors, or conditions without any interference or manipulation by the researcher. Unlike experimental data, where participants are randomly assigned to different treatments, observational data comes from naturally occurring phenomena. In the case of this study, the data is derived from emergency response logs, which capture real-world incidents without any direct control over the conditions under which the data is collected.
 
-## Posterior predictive check
+The key challenge with observational data is the risk of selection bias or confounding factors. For example, certain types of incidents (e.g., medical emergencies) might be more likely to be recorded during peak hours, potentially skewing results if this factor is not considered. Additionally, time of day, geographical factors, or incident severity could all influence data patterns, which requires careful accounting for these elements to ensure accurate conclusions.
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
+### Why Focus on Observational Data?
+One of the primary advantages of working with observational data is that it allows for the analysis of real-world scenarios without needing to rely on artificial conditions. In the case of emergency response data, observational data can provide insights into how resource allocation occurs in response to varying incident types and times of day. Collecting new observational data allows researchers to analyze existing systems, such as healthcare, traffic management, and emergency services, which are inherently complex and often not amenable to traditional experimental study designs.
 
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
+Moreover, since observational data is often more readily available compared to experimental data, it can offer quicker and cheaper insights. This is especially valuable in areas like emergency management, where real-time data is essential for decision-making and resource deployment.
 
-```{r}
-#| eval: false
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+## Credibility in Observational Data Collection
+### Key Challenges in Observational Data Collection
+While observational data offers valuable insights, it is subject to several challenges that can affect its credibility. These challenges include bias, measurement errors, and confounding variables.
 
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
+Bias: This arises when certain groups or types of data are over- or underrepresented due to the way the data is collected. For example, if incidents occurring in certain neighborhoods or regions are more likely to be logged than those in others, the data could be biased, leading to inaccurate conclusions.
 
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
+Measurement Errors: Data collection in observational studies often depends on human input (e.g., data entry by emergency responders), which may lead to errors. These errors could involve incorrectly logging incident types, missing data points, or misreporting times.
 
-## Diagnostics
+Confounding: In observational studies, certain unmeasured variables might affect both the predictor and the outcome variable, leading to misleading associations. For example, weather conditions or road closures could influence the frequency of certain incidents, but if these factors are not accounted for, the results may not accurately reflect the true relationships.
 
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
+### Strategies for Ensuring Credibility
+To ensure that the observational data collection process remains credible, several strategies can be implemented:
 
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
+Data Validation: Continuous validation checks are crucial to ensure that the data is accurate and complete. This might involve cross-checking reported incidents with independent sources (e.g., by reviewing video footage or corroborating with nearby emergency service providers) to ensure consistency.
 
-```{r}
-#| echo: false
-#| eval: false
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
+Standardization of Data Entry: Establishing standardized protocols for data collection can reduce errors introduced by subjective decisions. For instance, ensuring that emergency responders log incidents using consistent terminologies or formats minimizes the potential for misinterpretation.
 
-plot(first_model, "trace")
+Minimizing Bias: To reduce bias in observational data, the data collection process should be designed to capture a representative sample of all incidents. For example, stratified sampling based on time of day, incident type, and location can help ensure that different subgroups are equally represented in the dataset. Weighting the data to account for underrepresented incident types (e.g., incidents that happen more frequently at night) can also help mitigate bias.
 
-plot(first_model, "rhat")
-```
+Controlling for Confounding Factors: Identifying potential confounding factors is essential for establishing more credible findings. For instance, weather conditions could impact incident frequency, so these should be recorded and incorporated into the analysis. By including key covariates like weather, road conditions, or staffing levels, it is possible to control for these confounding effects, ensuring the relationships between incident characteristics and resource allocation are accurately captured.
 
+## Collecting New Observational Data
+If collecting new observational data were part of this study, careful planning and execution would be necessary to ensure data credibility. Here are the steps I would follow:
 
+### Establish Clear Objectives
+Before starting data collection, it's crucial to define clear research questions. For instance, "How do incident types affect the allocation of emergency units during peak hours?" Understanding what variables need to be captured will guide the data collection process and ensure that only relevant information is recorded. This includes variables such as incident type, number of units dispatched, time of day, and response times.
+
+### Define Sampling Procedures
+Given that observational data often suffers from biases related to time or location, it would be important to define a sampling procedure that captures a representative range of incidents. This could include:
+
+Stratified Sampling: Ensure that incidents are captured across different times of day (morning, afternoon, night) and different days of the week.
+Random Sampling: Although observational data is often non-random, incorporating a random sampling element (e.g., randomly selecting some incidents for additional review or analysis) could help ensure a broader representation.
+
+### Data Logging Protocol
+A standardized data entry protocol is necessary to ensure consistency across all data entries. For instance, data entry personnel (e.g., emergency responders or dispatchers) should be trained to use the same terminology for incident types and categories. This can help prevent discrepancies in the way incidents are logged.
+
+Additionally, using automated systems to capture data (e.g., GPS systems to log the exact time and location of incidents) can reduce human error and provide more reliable information. Any manual entries, such as the number of units dispatched, should be carefully checked against existing records to ensure accuracy.
+
+### Ethical Considerations and Data Privacy
+In collecting new observational data, particularly from emergency responders, it is essential to adhere to strict ethical guidelines. This includes ensuring the confidentiality and privacy of individuals involved in incidents. All personally identifiable information should be anonymized or removed from the dataset, ensuring compliance with ethical standards and data protection regulations.
+
+### Use of Simulation for Data Collection
+To simulate real-world data and anticipate potential biases or gaps, simulation studies can be valuable. For example, by simulating different incident scenarios (e.g., a high volume of medical emergencies or vehicle accidents during rush hour), we could test how well the data collection process captures these extremes. This would help identify areas of improvement in the observational process and validate the model's robustness when applied to actual data.
+
+## Weaknesses and Limitations
+Despite these strategies, there are inherent limitations in the use of observational data:
+
+- Unobserved Confounding: Some factors, such as hidden traffic patterns or covert road closures, might influence the data in ways that are difficult to account for.
+
+- Temporal and Spatial Biases: Certain periods (e.g., holiday seasons or extreme weather events) might not be equally represented in the data, affecting the generalizability of the results.
+
+- Measurement Errors: Even with standardization, some degree of measurement error is inevitable in manually logged data.
+These limitations emphasize the importance of combining observational data with other methods, such as simulation studies or complementary data sources, to validate findings and improve the credibility of the conclusions drawn.
 
 \newpage
-
 
 # References
 
