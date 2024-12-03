@@ -18,9 +18,13 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
-```
+library(openxlsx)
+library(readxl)
+library(arrow)
+library(here)
+library(knitr)
 
+```
 
 # Introduction
 
@@ -32,29 +36,38 @@ The remainder of this paper is organized as follows. @sec-data discusses the dat
 
 # Data {#sec-data}
 
-The statistical programming language R [@R] is used to process, manage and visualize the data. Specifically, statistical libraries such as `opendatatoronto` [@opendatatoronto], `openxlsx` [@openxlsx] and `janitor` [@janitor] are used to simulate, download and clean the raw data. The library `arrow` [@arrow] was used to save the simulated dataset and the analysis dataset. Other libraries like '`knitr` [@knitr], `here` [@here] are used to load and to render tables. The library `tidyverse` [@tidyverse] is useful throughout the entire data manipulation process. 
+## Overview
+The dataset used for this analysis is titled "Paramedic Services Incident Data" and is published by Toronto Paramedic Services [@data_parmedic_source]. For this paper, the dataset is retrieved from the City of Toronto Open Data Portal.
 
-## Data source
+The statistical programming language R [@R] is used to process, manage and visualize the data. Specifically, statistical libraries such as `opendatatoronto` [@opendatatoronto], `openxlsx` [@openxlsx] and `janitor` [@janitor] are used to simulate, download and clean the raw data. Libraries like `arrow` [@arrow] and `readxl` [@readxl] were used to save and read datasets. Other libraries like `knitr` [@knitr], `here` [@here] are used to load and to render tables. The library `tidyverse` [@tidyverse] is useful throughout the entire data manipulation process. 
 
-The dataset used for this analysis is titled "Paramedic Services Incident Data" and is published by Toronto Paramedic Services [@data_parmedic_source]. For this paper, the dataset is retrieved from the City of Toronto Open Data Portal through the R package `opendatatoronto` [@opendatatoronto]. The initial dataset features paramedic dispatch time, the type of incident, the priority level of each incident, the number of paramedic units arrived at scene and the forward station area of the incident. These features are annually refreshed on Open Data Toronto by Toronto Paramedic Services. 
+The initial dataset features data on paramedic dispatch time, type of incident, priority level of each incident, number of paramedic units arrived at scene and forward sortation area of the incident. These features are annually refreshed on Open Data Toronto by Toronto Paramedic Services.
 
 The data used for this paper was retrieved on November 25, 2024 and was last refreshed on October 5, 2023. 
 
 ## Measurements
 
-The dataset captures ambulance incident records with real-world emergency service activities. 
+The incident data is saved in different files according to the year of incident. The variables and measurement method of the variables are preserved throughout the recorded years. 
 
-[INSERT SAMPLE OF CLEAN DATASET]
+```{r}
+#| message: false
+#| echo: false
+#| warning: false
+#| label: tbl-raw_data
+#| tbl-cap: First Ten Rows of the Paramedic Services Incident Data from 2017
 
-Table 1 is a sample of the clean dataset used in this paper. Each row in the dataset represents to a different incident. More information such as the type of emergency and paramedic response are also included and are unique to the incident. 
+# read raw data
+raw_2017 <- read_xlsx(here::here("data/01-raw_data/paramedic_services_2017.xlsx"))
 
-The temporal variables (`year`, `month`, `day_of_week`, and `hour`) are derived from dispatch timestamp recorded during each incident. These entries useful in exploring seasonal, weekly, and daily patterns. 
+# visualize the first 10 rows of the data
+raw_2017 |>
+  select(Dispatch_Time, Incident_Type, Priority_Number, Units_Arrived_At_Scene, Forward_Sortation_Area) |>
+  slice(1:10) |>
+  kable(col.names = c("Dispatch Time", "Incident Type", "Priority Number", "Units Arrived", "Location"))
+```
 
-The incident type (`incident_type`) represents a classification provided by dispatchers or paramedics based on the nature of the call. This variable reflects categories such as medical emergencies, vehicle accidents, and fires. It ensures that diverse incidents are grouped into manageable classifications for analysis.
-
-The response metrics (`avg_units_arrived` and `count`) represent operational data tied to each incident. The `avg_units_arrived` variable is calculated by averaging the number of units dispatched to each type of incident within specific time intervals. The `count` variable represents the number of incidents recorded for each combination of temporal and incident characteristics. These variables quantify resource utilization and demand, enabling a detailed exploration of service patterns.
-
-Through this systematic representation of real-world phenomena, the dataset provides a foundation for analyzing ambulance demand and the factors influencing emergency service delivery.
+@tbl-raw_data is a sample of the 10 first entries in the incident data in 2017. Each row in the dataset represents a unique incident. "Dispatch Time" is the precise time when the first paramedic unit was assigned to an incident. This is measured in year, month, date, hour, minutes, and seconds. "Incident Type" is the category assigned to the incident by the dispatcher based on the information provided in the 9.1.1. call. The possible categories of incident are medical emergencies, emergency transfers, fire-related incidents and motor vehicle accidents. "Priority number" represents the urgency of an incident with 1 being the most urgent and 5 being the least. The priority number is measured by the Medical Priority Dispatch System (MPDS) based on the information provided by the 9.1.1. caller(s). "Units Arrived" is the total number of paramedics that arrived on the scene of incident. This is measured by counting the number of different paramedic units who were dispatched and responded to the incident. Units part of this count do not have to be simultaneously present, and a unit who leaves the scene and comes back afterwards is considered 1 count. 
+"Location" is the general location of the incident based on Postal Code Forward Sortation Areas. This is determined as the first three characters of the postal code of the incident location. 
 
 ## Outcome Variables
 
