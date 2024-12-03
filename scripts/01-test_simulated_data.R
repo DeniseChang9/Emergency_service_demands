@@ -1,89 +1,97 @@
 #### Preamble ####
-# Purpose: Tests the structure and validity of the simulated Australian 
-  #electoral divisions dataset.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
+# Purpose: Tests the structure and validity of the simulated Paramedic Service Data
+# Author: Denise Chang
+# Date: 3 December 2024
+# Contact: dede.chang@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: 
-  # - The `tidyverse` package must be installed and loaded
-  # - 00-simulate_data.R must have been run
-# Any other information needed? Make sure you are in the `starter_folder` rproj
-
+# Pre-requisites: 00-simulate_data.R 
 
 #### Workspace setup ####
-library(tidyverse)
+library(testthat)
+library(arrow)
+library(here)
 
-analysis_data <- read_csv("data/00-simulated_data/simulated_data.csv")
-
-# Test if the data was successfully loaded
-if (exists("analysis_data")) {
-  message("Test Passed: The dataset was successfully loaded.")
-} else {
-  stop("Test Failed: The dataset could not be loaded.")
-}
-
+sim_data <- read_parquet(here::here("data/00-simulated_data/simulated_data.parquet"))
 
 #### Test data ####
 
-# Check if the dataset has 151 rows
-if (nrow(analysis_data) == 151) {
-  message("Test Passed: The dataset has 151 rows.")
-} else {
-  stop("Test Failed: The dataset does not have 151 rows.")
-}
+## Test that there are no missing data
+# Test that there are no missing values in critical columns
+test_that("no missing values in critical columns", {
+  expect_true(all(!is.na(sim_data$year)))
+  expect_true(all(!is.na(sim_data$incident_type)))
+  expect_true(all(!is.na(sim_data$avg_units_arrived)))
+})
 
-# Check if the dataset has 3 columns
-if (ncol(analysis_data) == 3) {
-  message("Test Passed: The dataset has 3 columns.")
-} else {
-  stop("Test Failed: The dataset does not have 3 columns.")
-}
+# Test that 'incident_type' does not contain "-"
+test_that("'incident_type' does not contain '-'", {
+  expect_false("-" %in% sim_data$incident_type)
+})
 
-# Check if all values in the 'division' column are unique
-if (n_distinct(analysis_data$division) == nrow(analysis_data)) {
-  message("Test Passed: All values in 'division' are unique.")
-} else {
-  stop("Test Failed: The 'division' column contains duplicate values.")
-}
+# Test that there are no empty strings in critical columns
+test_that("no empty strings in critical columns", {
+  expect_false(any(sim_data$avg_units_arrived == "" |
+                     sim_data$count == ""))
+})
 
-# Check if the 'state' column contains only valid Australian state names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", 
-                  "Western Australia", "Tasmania", "Northern Territory", 
-                  "Australian Capital Territory")
+## Test that the variables are of appropriate type
+# Test that the 'year' column is integer type
+test_that("'year' is of type integer", {
+  expect_type(sim_data$year, "integer")
+})
 
-if (all(analysis_data$state %in% valid_states)) {
-  message("Test Passed: The 'state' column contains only valid Australian state names.")
-} else {
-  stop("Test Failed: The 'state' column contains invalid state names.")
-}
+# Test that the 'month' column is an ordered factor
+test_that("'month' is ordered", {
+  expect_s3_class(sim_data$month, "ordered")
+})
 
-# Check if the 'party' column contains only valid party names
-valid_parties <- c("Labor", "Liberal", "Greens", "National", "Other")
+# Test that the 'day_of_week' column is an ordered factor
+test_that("'day_of_week' is ordered", {
+  expect_s3_class(sim_data$day_of_week, "ordered")
+})
 
-if (all(analysis_data$party %in% valid_parties)) {
-  message("Test Passed: The 'party' column contains only valid party names.")
-} else {
-  stop("Test Failed: The 'party' column contains invalid party names.")
-}
+# Test that the 'hour' column is integer type
+test_that("'hour' is integer", {
+  expect_type(sim_data$hour, "integer")
+})
 
-# Check if there are any missing values in the dataset
-if (all(!is.na(analysis_data))) {
-  message("Test Passed: The dataset contains no missing values.")
-} else {
-  stop("Test Failed: The dataset contains missing values.")
-}
+# Test that the 'incident_type' column is character type
+test_that("'incident_type' is character", {
+  expect_type(sim_data$incident_type, "character")
+})
 
-# Check if there are no empty strings in 'division', 'state', and 'party' columns
-if (all(analysis_data$division != "" & analysis_data$state != "" & analysis_data$party != "")) {
-  message("Test Passed: There are no empty strings in 'division', 'state', or 'party'.")
-} else {
-  stop("Test Failed: There are empty strings in one or more columns.")
-}
+# Test that the 'avg_units_arrived' column is double type
+test_that("'avg_units_arrived' is double", {
+  expect_type(sim_data$avg_units_arrived, "double")
+})
 
-# Check if the 'party' column has at least two unique values
-if (n_distinct(analysis_data$party) >= 2) {
-  message("Test Passed: The 'party' column contains at least two unique values.")
-} else {
-  stop("Test Failed: The 'party' column contains less than two unique values.")
-}
+# Test that the 'count' column is integer type
+test_that("'count' is integer", {
+  expect_type(sim_data$count, "integer")
+})
+
+## Test that the variables are in bounds
+# Test that 'year' column values are between 2017 and 2022
+test_that("'year' is between 2017 and 2022", {
+  expect_true(all(sim_data$year >= 2017 & sim_data$year <= 2022))
+})
+
+# Test that 'hour' column values are between 0 and 23
+test_that("'hour' is between 0 and 23", {
+  expect_true(all(sim_data$hour >= 0 & sim_data$hour < 24))
+})
+
+# Test that 'incident_type' contains only valid values
+valid_types <-
+  c("emergency transfer",
+    "fire",
+    "medical",
+    "motor vehicle accident")
+test_that("'incident_type' contains only valid values", {
+  expect_true(all(sim_data$incident_type %in% valid_types))
+})
+
+# Test that 'avg_units_arrived' column values are non-negative
+test_that("'avg_units_arrived' is non-negative", {
+  expect_true(all(sim_data$avg_units_arrived >= 0))
+})
