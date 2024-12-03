@@ -66,7 +66,7 @@ clean_data <-
   selected_data |>
   group_by(year, month, day_of_week, hour, incident_type) |>
   summarise(
-    avg_units_arrived = mean(units_arrived_at_scene, na.rm = TRUE),
+    avg_units_arrived = format(round(mean(units_arrived_at_scene, na.rm = TRUE), 1), nsmall = 1),
     count = n()
   ) |>
   ungroup()
