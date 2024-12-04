@@ -2,10 +2,7 @@
 
 ## Overview
 
-**UNDER CONSTRUCTION**
-
 This repository analyzes paramedic incident data from Open Data Toronto to uncover trends in emergency response patterns. The study investigates how time-based factors such as year, month, day of the week, and hour influence the frequency and nature of incidents. By using historical data from 2017 to 2022, the project aims to identify patterns in service demand and provide insights to optimize resource allocation in Toronto. The analysis also examines variations in incident priorities and response metrics, supporting data-driven decision-making to improve paramedic service efficiency and outcomes.
-
 
 ## File Structure
 
@@ -19,4 +16,6 @@ The repo is structured as:
 
 
 ## Statement on LLM usage
-[UPDATE THIS] 
+
+Aspects of the code were written with the help of ChatGPT. The entire chat history is available other/llm_usage.
+
